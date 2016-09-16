@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>todolist</title>
+    <style type="text/css">
+        a {
+            display: inline-block;
+            text-decoration: none;
+            color: #777;
+            padding:5px 10px;
+        }
+        a.selected {
+            border: 1px solid rgba(119, 119, 119, 0.37);
+            border-radius: 5px;
+            color: #ddd;
+        }
+        .itemDetail {
+            cursor: pointer;
+        }
+        .itemDetail input:checked + span{
+            color: #ddd;
+            text-decoration: line-through;
+        }
+        #itemContainer{
+            height: 400px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" id="info"><span id="totalInfo"></span>
+    <div>
+        <ul id="itemContainer">
+            <!-- <li>
+                <label class="itemDetail">
+                    <input type="checkbox"/>
+                    <span>dasdasd</span>
+                </label>
+            </li> -->
+        </ul>
+    </div>
+    <script type="text/javascript">
+        var list = [];
+        var currentTemp = 'all';
+        var allNum = 0;
+        var doneNum = 0;
+        var unDoneNum = 0;
+
+        var info = document.getElementById('info');
+        var totalInfo = document.getElementById('totalInfo');
+        var itemContainer = document.getElementById('itemContainer');
+
+        var bindEvent = function(ele, selector, event, fn) {
+            if(arguments.length === 4) {
+                ele.addEventListener(event, function(e) {
+                    var target = e.target;
+                    if(target.className.indexOf(selector) > -1) {
+                        fn(e);
+                    }
+                });
+            }else {
+                fn = event;
+                event = selector;
+                ele.addEventListener(event, fn);
+            }
+        };
+        var reset = function() {
+            allNum = 0;
+            doneNum = 0;
+            unDoneNum = 0;
+        };
+        var saveData = function() {
+            window.localStorage.setItem('todoList', JSON.stringify(list));
+        };
+        var getData = function() {
+            var item = window.localStorage.getItem('todoList');
+            if(item) {
+                list = JSON.parse(item);
+            }else {
+                list = [];
+            }
+            showList();
+        };
+        var addItem = function(e) {
+            if(e.keyCode === 13 && info.value) {
+                list.push({
+                    value: info.value,
+                    done: false,
+                    id: +new Date()
+                });
+                info.value = '';
+                showList();
+            }
+        };
+        var changeItem = function(e) {
+            var target = e.target;
+            var checked = target.checked;
+            var value = +target.value;
+            for (var i = 0; i < list.length; i++) {
+                if(list[i].id === value) {
+                    list[i].done = checked;
+                    break;
+                }
+            }
+            showList();
+        };
+        var totalInfoFunc = function () {
+            return [
+                '<span>全部'+allNum+'(已完成'+doneNum+'，未完成'+unDoneNum+')</span>',
+                '<a href="javascript:;" id="selectAll" class="selectAll '+(currentTemp==='all'?'selected':'')+'">全部</a>',
+                '<a href="javascript:;" id="selectDone" class="selectDone '+(currentTemp===true?'selected':'')+'">已完成</a>',
+                '<a href="javascript:;" id="selectUndone" class="selectUndone '+(currentTemp===false?'selected':'')+'">未完成</a>'
+            ].join('');
+        };
+        var changeType = function(type) {
+            currentTemp = type;
+            showList();
+        };
+        var showDetail = function(detail) {
+            var checked = detail.done?'checked': '';
+            return [
+                '<li>',
+                    '<label class="itemDetail">',
+                        '<input type="checkbox"/ '+checked+' value="'+detail.id+'" class="itemValue">',
+                        '<span>'+detail.value+'</span>',
+                    '</label>',
+                '</li>'
+            ].join('');
+        };
+
+        var showList = function() {
+            reset();
+
+            var html = '';
+            
+            for (var i = 0; i < list.length; i++) {
+
+                if(currentTemp === 'all' || currentTemp === list[i].done) {
+                    html += showDetail(list[i]);
+                }
+
+                if(list[i].done === true) {
+                    doneNum ++;
+                }else {
+                    unDoneNum ++;
+                }
+            }
+            allNum = list.length;
+            itemContainer.innerHTML = html;
+            totalInfo.innerHTML = totalInfoFunc();
+            saveData();
+        };
+
+        bindEvent(info, 'keydown', addItem);
+        bindEvent(itemContainer, 'itemValue', 'change', changeItem);
+        bindEvent(totalInfo, 'selectAll', 'click', function() {
+            changeType('all');
+        });
+        bindEvent(totalInfo, 'selectDone', 'click', function() {
+            changeType(true);
+        });
+        bindEvent(totalInfo, 'selectUndone', 'click', function() {
+            changeType(false);
+        });
+        getData();
+    </script>
+</body>
+</html>
